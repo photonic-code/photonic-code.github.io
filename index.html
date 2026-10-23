@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STATION 3301 - NUMBERS BROADCAST</title>
+  <title>·</title>
   <style>
     :root {
       --bg: #090c0a;
-      --term-green: #33ff66;
-      --term-dim: #1a8833;
-      --term-dark: #0f3316;
-      --term-alert: #ff4444;
       --amber: #ffb833;
+      --alert: #ff3333;
     }
 
     * {
@@ -20,18 +17,28 @@
       padding: 0;
     }
 
+    html, body {
+      height: 100%;
+    }
+
     body {
       background-color: var(--bg);
-      color: var(--term-green);
-      font-family: 'Courier New', Courier, monospace, monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      overflow-x: hidden;
+      overflow: hidden;
       position: relative;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #scope {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
     }
 
     /* CRT scanlines effect */
@@ -52,230 +59,122 @@
       display: block;
       position: absolute;
       top: 0; left: 0; bottom: 0; right: 0;
-      background: radial-gradient(circle, transparent 60%, rgba(0, 0, 0, 0.8) 100%);
+      background: radial-gradient(circle, transparent 55%, rgba(0, 0, 0, 0.85) 100%);
       pointer-events: none;
       z-index: 11;
     }
 
-    .container {
-      width: 100%;
-      max-width: 760px;
-      background: rgba(10, 20, 12, 0.85);
-      border: 1px solid var(--term-dim);
-      box-shadow: 0 0 25px var(--term-dark);
-      padding: 24px;
-      border-radius: 4px;
-      position: relative;
+    /* Status lamp (top right) */
+    #dot {
+      position: fixed;
+      top: 22px;
+      right: 22px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--amber);
+      box-shadow: 0 0 12px var(--amber);
+      animation: blink 1.4s infinite alternate;
       z-index: 5;
     }
 
-    header {
-      border-bottom: 1px solid var(--term-dim);
-      padding-bottom: 12px;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .title {
-      font-size: 1.2rem;
-      letter-spacing: 2px;
-      font-weight: bold;
-      text-shadow: 0 0 8px var(--term-green);
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      color: var(--amber);
-      border: 1px solid var(--amber);
-      padding: 2px 8px;
-      border-radius: 2px;
-    }
-
-    .blinker {
-      width: 8px;
-      height: 8px;
-      background-color: var(--amber);
-      border-radius: 50%;
-      animation: blink 1s infinite alternate;
+    #dot.live {
+      background-color: var(--alert);
+      box-shadow: 0 0 14px var(--alert);
+      animation-duration: 0.6s;
     }
 
     @keyframes blink {
-      0% { opacity: 0.2; }
-      100% { opacity: 1; }
+      0% { opacity: 0.15; }
+      100% { opacity: 0.95; }
     }
 
-    .freq-box {
-      display: flex;
-      justify-content: space-between;
-      background: #040804;
-      border: 1px solid var(--term-dark);
-      padding: 12px;
-      margin-bottom: 20px;
-      font-size: 0.9rem;
-    }
-
-    .freq-item span {
-      color: #88cc99;
-      margin-left: 6px;
-    }
-
-    /* Oscilloscope canvas */
-    canvas {
-      width: 100%;
-      height: 120px;
-      background: #020603;
-      border: 1px solid var(--term-dim);
-      display: block;
-      margin-bottom: 20px;
-    }
-
-    /* Log / Terminal output */
-    .terminal-window {
-      background: #020503;
-      border: 1px solid var(--term-dark);
-      min-height: 140px;
-      padding: 14px;
-      font-size: 0.95rem;
-      line-height: 1.6;
-      margin-bottom: 24px;
-      font-family: inherit;
-    }
-
-    .log-line {
-      margin-bottom: 4px;
-    }
-
-    .log-line.active {
-      color: #ffffff;
-      font-weight: bold;
-      text-shadow: 0 0 10px var(--term-green);
-    }
-
-    .log-line.word {
-      font-size: 1.15rem;
-      letter-spacing: 3px;
-      color: #aaffbb;
-      padding-left: 14px;
-    }
-
-    /* Controls */
-    .controls {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    button {
-      background: #081a0c;
-      color: var(--term-green);
-      border: 1px solid var(--term-green);
-      padding: 12px 28px;
-      font-family: inherit;
-      font-size: 1rem;
-      letter-spacing: 2px;
+    /* Play / stop button (icon only, no text) */
+    #play {
+      position: fixed;
+      left: 50%;
+      bottom: 6%;
+      transform: translateX(-50%);
+      width: 68px;
+      height: 68px;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid #33ff66;
+      background: rgba(8, 26, 12, 0.85);
+      box-shadow: 0 0 14px rgba(51, 255, 102, 0.35);
+      display: grid;
+      place-items: center;
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 0 10px rgba(51, 255, 102, 0.2);
+      z-index: 20;
+      animation: invite 2s infinite;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    button:hover:not(:disabled) {
-      background: var(--term-green);
-      color: var(--bg);
-      box-shadow: 0 0 20px var(--term-green);
+    #play:hover {
+      background: rgba(51, 255, 102, 0.18);
     }
 
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      border-color: var(--term-dim);
+    #play .icon-play {
+      width: 0;
+      height: 0;
+      margin-left: 6px;
+      border-style: solid;
+      border-width: 13px 0 13px 22px;
+      border-color: transparent transparent transparent #33ff66;
+      filter: drop-shadow(0 0 6px #33ff66);
     }
 
-    footer {
-      margin-top: 18px;
-      text-align: center;
-      font-size: 0.75rem;
-      color: var(--term-dim);
-      letter-spacing: 1px;
+    #play .icon-stop {
+      display: none;
+      width: 22px;
+      height: 22px;
+      background: #ff3333;
+      filter: drop-shadow(0 0 6px #ff3333);
+    }
+
+    #play.live {
+      border-color: #ff3333;
+      box-shadow: 0 0 14px rgba(255, 51, 51, 0.4);
+      animation: none;
+    }
+
+    #play.live .icon-play { display: none; }
+    #play.live .icon-stop { display: block; }
+
+    @keyframes invite {
+      0%   { box-shadow: 0 0 6px rgba(51, 255, 102, 0.25), 0 0 0 0 rgba(51, 255, 102, 0.35); }
+      70%  { box-shadow: 0 0 14px rgba(51, 255, 102, 0.45), 0 0 0 16px rgba(51, 255, 102, 0); }
+      100% { box-shadow: 0 0 6px rgba(51, 255, 102, 0.25), 0 0 0 0 rgba(51, 255, 102, 0); }
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <div class="title">CICADA // NUMBERS STATION [3301]</div>
-      <div class="status-badge">
-        <div class="blinker" id="blinker"></div>
-        <span id="status-text">MONITORING</span>
-      </div>
-    </header>
-
-    <div class="freq-box">
-      <div class="freq-item">FREQ:<span>3301.00 kHz (AM)</span></div>
-      <div class="freq-item">SIGNAL:<span>ENCRYPTED V/O</span></div>
-      <div class="freq-item">CODEC:<span>NATO-PHONETIC</span></div>
-    </div>
-
-    <!-- Audio Visualizer Canvas -->
-    <canvas id="scope"></canvas>
-
-    <!-- Transmission Terminal Log -->
-    <div class="terminal-window" id="terminal">
-      <div class="log-line">[SYSTEM] RECEIVER ONLINE. AWAITING SIGNAL...</div>
-      <div class="log-line">[PRESS "RECEIVE TRANSMISSION" TO DECODE AUDIO]</div>
-    </div>
-
-    <div class="controls">
-      <button id="btn-play" onclick="startTransmission()">RECEIVE TRANSMISSION</button>
-      <button id="btn-stop" onclick="stopTransmission()" disabled>ABORT</button>
-    </div>
-
-    <footer>
-      SECURE CARRIER DETECTED &bull; 00-3301-GENESIS &bull; REPEAT CYCLES ENABLED
-    </footer>
-  </div>
+  <canvas id="scope"></canvas>
+  <div id="dot"></div>
+  <button id="play" type="button"><span class="icon-play"></span><span class="icon-stop"></span></button>
 
   <script>
-    const WORDS = ["GOLF", "ECHO", "NOVEMBER", "ECHO", "SIERRA", "INDIA", "SIERRA"];
+    // Tap anywhere to start / stop. No text is shown on screen.
+    const WORDS = atob("R09MRixFQ0hPLE5PVkVNQkVSLEVDSE8sU0lFUlJBLElORElBLFNJRVJSQQ==").split(",");
+    const CYCLE_PAUSE_MS = 5000;   // silence between repeats
+
     let audioCtx = null;
     let isPlaying = false;
-    let abortSignal = false;
+    let speaking = false;          // true while a word is being read
+    let beepUntil = 0;             // visual boost while a beep sounds
+    let tuneStart = 0;             // when the "carrier lock" sweep began
+    let runId = 0;                 // changes on every start/stop to cancel old loops
     let noiseNode = null;
-    let animId = null;
+    const dot = document.getElementById('dot');
+    const playBtn = document.getElementById('play');
 
-    const terminal = document.getElementById('terminal');
-    const statusText = document.getElementById('status-text');
-    const blinker = document.getElementById('blinker');
-    const btnPlay = document.getElementById('btn-play');
-    const btnStop = document.getElementById('btn-stop');
-    const canvas = document.getElementById('scope');
-    const ctx = canvas.getContext('2d');
-
-    // Canvas size
-    function resizeCanvas() {
-      canvas.width = canvas.clientWidth * window.devicePixelRatio;
-      canvas.height = canvas.clientHeight * window.devicePixelRatio;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function log(msg, className = '') {
-      const line = document.createElement('div');
-      line.className = 'log-line ' + className;
-      line.textContent = msg;
-      terminal.appendChild(line);
-      terminal.scrollTop = terminal.scrollHeight;
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
     }
 
-    // Synthesize Radio Static & Tuning Tone with Web Audio API
+    /* ---------------- Audio ---------------- */
+
     function initAudio() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -287,6 +186,7 @@
 
     function playBeep(freq = 800, duration = 0.25) {
       if (!audioCtx) return;
+      beepUntil = performance.now() + duration * 1000;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
@@ -300,7 +200,7 @@
     }
 
     function startRadioNoise() {
-      if (!audioCtx) return;
+      if (!audioCtx || noiseNode) return;
       const bufferSize = audioCtx.sampleRate * 2;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -311,7 +211,7 @@
       noiseNode.buffer = buffer;
       noiseNode.loop = true;
 
-      // Bandpass filter for authentic shortwave radio hiss
+      // Bandpass filter for shortwave radio hiss
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'bandpass';
       filter.frequency.value = 1400;
@@ -328,127 +228,285 @@
 
     function stopRadioNoise() {
       if (noiseNode) {
-        try { noiseNode.stop(); } catch(e){}
+        try { noiseNode.stop(); } catch (e) {}
         noiseNode = null;
       }
     }
 
-    // Oscilloscope Animation
-    function drawScope() {
-      ctx.fillStyle = '#020603';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.strokeStyle = isPlaying ? '#33ff66' : '#1a5526';
-      ctx.lineWidth = 2 * window.devicePixelRatio;
-      ctx.beginPath();
-
-      const centerY = canvas.height / 2;
-      const points = 80;
-      for (let i = 0; i <= points; i++) {
-        const x = (canvas.width / points) * i;
-        let y = centerY;
-        if (isPlaying) {
-          const amp = Math.sin(i * 0.4 + Date.now() * 0.015) * 18 * Math.random();
-          y += amp * window.devicePixelRatio;
-        } else {
-          y += (Math.random() - 0.5) * 3;
-        }
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      animId = requestAnimationFrame(drawScope);
-    }
-    drawScope();
-
-    // Voice Readout using Web Speech API
-    function speakWord(word) {
+    function speakWord(word, id) {
       return new Promise((resolve) => {
-        if (abortSignal) return resolve();
+        if (id !== runId) return resolve();
         const utter = new SpeechSynthesisUtterance(word);
         utter.lang = 'en-US';
-        utter.rate = 0.85; // deliberate, calm numbers station cadence
-        utter.pitch = 0.82; // slightly deeper, cold radio operator tone
-        
-        // Pick English voice if available
+        utter.rate = 0.85;    // deliberate, calm cadence
+        utter.pitch = 0.82;   // slightly deeper, cold operator tone
+
         const voices = window.speechSynthesis.getVoices();
-        const engVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex')));
+        const engVoice = voices.find(v => v.lang.startsWith('en') &&
+          (v.name.includes('Natural') || v.name.includes('Google') ||
+           v.name.includes('Samantha') || v.name.includes('Alex')));
         if (engVoice) utter.voice = engVoice;
 
-        utter.onend = () => {
-          setTimeout(resolve, 600); // interval between code words
-        };
-        utter.onerror = () => resolve();
+        utter.onend = () => { speaking = false; setTimeout(resolve, 600); };
+        utter.onerror = () => { speaking = false; resolve(); };
+        speaking = true;
         window.speechSynthesis.speak(utter);
       });
-    }
-
-    function sleep(ms) {
-      return new Promise(r => setTimeout(r, ms));
     }
 
     async function startTransmission() {
       initAudio();
       isPlaying = true;
-      abortSignal = false;
-      btnPlay.disabled = true;
-      btnStop.disabled = false;
-      statusText.textContent = "INCOMING TRANSMISSION";
-      statusText.style.color = "#ff3333";
-      blinker.style.backgroundColor = "#ff3333";
-
-      terminal.innerHTML = "";
-      log(`[${new Date().toISOString().substring(11, 19)} UTC] CARRIER LOCK: 3301.00 kHz`);
+      const id = ++runId;
+      dot.classList.add('live');
+      playBtn.classList.add('live');
+      tuneStart = performance.now();
       startRadioNoise();
-      playBeep(920, 0.3);
-      await sleep(400);
-      playBeep(920, 0.3);
-      await sleep(700);
 
-      log("[SYSTEM] TRANSMISSION COMMENCING:", "active");
+      while (id === runId) {
+        playBeep(920, 0.3);
+        await sleep(400);
+        playBeep(920, 0.3);
+        await sleep(700);
 
-      for (let i = 0; i < WORDS.length; i++) {
-        if (abortSignal) break;
-        const w = WORDS[i];
-        log(`> ${w}`, "word active");
-        await speakWord(w);
-      }
+        for (let i = 0; i < WORDS.length; i++) {
+          if (id !== runId) break;
+          await speakWord(WORDS[i], id);
+        }
 
-      if (!abortSignal) {
+        if (id !== runId) break;
         playBeep(460, 0.6);
-        log(`[${new Date().toISOString().substring(11, 19)} UTC] END OF TRANSMISSION.`);
-        log("[ANALYSIS] RECORDED 7 TOKENS. EXTRACT INITIALS TO RECOVER CIPHERTEXT.");
+        await sleep(CYCLE_PAUSE_MS);
+        tuneStart = performance.now();   // short re-lock sweep on each cycle
       }
-
-      stopRadioNoise();
-      isPlaying = false;
-      btnPlay.disabled = false;
-      btnStop.disabled = true;
-      statusText.textContent = "STANDBY";
-      statusText.style.color = "var(--amber)";
-      blinker.style.backgroundColor = "var(--amber)";
     }
 
     function stopTransmission() {
-      abortSignal = true;
+      runId++;
+      isPlaying = false;
+      speaking = false;
       window.speechSynthesis.cancel();
       stopRadioNoise();
-      isPlaying = false;
-      btnPlay.disabled = false;
-      btnStop.disabled = true;
-      log("[SYSTEM] TRANSMISSION ABORTED BY OPERATOR.");
-      statusText.textContent = "STANDBY";
-      statusText.style.color = "var(--amber)";
-      blinker.style.backgroundColor = "var(--amber)";
+      dot.classList.remove('live');
+      playBtn.classList.remove('live');
     }
 
-    // Load voices
+    function toggle() {
+      if (isPlaying) stopTransmission();
+      else startTransmission();
+    }
+
+    // Button toggles; tapping elsewhere on the screen works too.
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();   // avoid firing the body handler a second time
+      toggle();
+    });
+    document.body.addEventListener('click', toggle);
+
     if (typeof window.speechSynthesis !== 'undefined') {
       window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.getVoices();
       };
     }
+
+    /* ---------------- Visuals (no text) ---------------- */
+
+    const canvas = document.getElementById('scope');
+    const ctx = canvas.getContext('2d');
+    let dpr = 1, W = 0, H = 0;
+
+    // small offscreen canvas for TV-static noise
+    const nW = 160, nH = 90;
+    const noiseCanvas = document.createElement('canvas');
+    noiseCanvas.width = nW;
+    noiseCanvas.height = nH;
+    const nctx = noiseCanvas.getContext('2d');
+    const nImg = nctx.createImageData(nW, nH);
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.width = Math.floor(window.innerWidth * dpr);
+      H = canvas.height = Math.floor(window.innerHeight * dpr);
+      ctx.fillStyle = '#090c0a';
+      ctx.fillRect(0, 0, W, H);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const BARS = 32;
+    const bars = new Array(BARS).fill(0);
+    let level = 0.05;              // smoothed activity 0..1
+    let sigLit = 1;
+    let lastSig = 0;
+    let frame = 0;
+
+    function drawNoise() {
+      const d = nImg.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 255;
+        d[i] = 0;
+        d[i + 1] = v;
+        d[i + 2] = v * 0.35;
+        d[i + 3] = 255;
+      }
+      nctx.putImageData(nImg, 0, 0);
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = isPlaying ? (speaking ? 0.11 : 0.08) : 0.035;
+      ctx.drawImage(noiseCanvas, 0, 0, W, H);
+      ctx.restore();
+    }
+
+    function draw(now) {
+      frame++;
+
+      // ---- activity level ----
+      let target = 0.05;
+      if (isPlaying) {
+        target = speaking ? 1.0 : 0.3;
+        if (now < beepUntil) target = Math.max(target, 0.75);
+      }
+      level += (target - level) * 0.18;
+
+      // ---- phosphor persistence (fade instead of clear) ----
+      ctx.fillStyle = 'rgba(9, 12, 10, 0.30)';
+      ctx.fillRect(0, 0, W, H);
+
+      if (frame % 2 === 0) drawNoise();
+
+      const green = isPlaying ? '#33ff66' : '#1a7a33';
+      const dim = isPlaying ? 'rgba(51,255,102,0.18)' : 'rgba(26,122,51,0.16)';
+
+      // ---- faint grid ----
+      ctx.lineWidth = 1 * dpr;
+      ctx.strokeStyle = dim;
+      ctx.beginPath();
+      const cols = 12, rows = 8;
+      for (let i = 1; i < cols; i++) {
+        const x = (W / cols) * i;
+        ctx.moveTo(x, H * 0.12);
+        ctx.lineTo(x, H * 0.62);
+      }
+      for (let j = 0; j <= 4; j++) {
+        const y = H * 0.12 + (H * 0.5 / 4) * j;
+        ctx.moveTo(W * 0.06, y);
+        ctx.lineTo(W * 0.94, y);
+      }
+      ctx.stroke();
+
+      // ---- waveform ----
+      const cy = H * 0.37;
+      const x0 = W * 0.06, wW = W * 0.88;
+      const N = 140;
+      const amp = level * H * 0.2 + 1.5 * dpr;
+      const t = now * 0.012;
+      ctx.save();
+      ctx.shadowColor = green;
+      ctx.shadowBlur = (isPlaying ? 10 : 3) * dpr;
+      ctx.strokeStyle = green;
+      ctx.lineWidth = 2 * dpr;
+      ctx.beginPath();
+      for (let i = 0; i <= N; i++) {
+        const k = i / N;
+        const env = Math.sin(Math.PI * k);               // taper at both ends
+        const s = Math.sin(k * 26 + t) * 0.55 +
+                  Math.sin(k * 61 - t * 1.7) * 0.25 +
+                  (Math.random() - 0.5) * 0.9;
+        const x = x0 + wW * k;
+        const y = cy + s * amp * (0.35 + 0.65 * env);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      // ---- frequency bars ----
+      const bBase = H * 0.62;
+      const bMax = H * 0.14;
+      const gap = wW / BARS;
+      ctx.save();
+      ctx.fillStyle = green;
+      ctx.shadowColor = green;
+      ctx.shadowBlur = (isPlaying ? 6 : 0) * dpr;
+      for (let i = 0; i < BARS; i++) {
+        const shape = 1 - (i / BARS) * 0.55;
+        const tgt = level * (0.25 + Math.random() * 0.75) * shape;
+        bars[i] += (tgt - bars[i]) * 0.3;
+        const h = Math.max(2 * dpr, bars[i] * bMax);
+        const bx = x0 + gap * i + gap * 0.18;
+        ctx.fillRect(bx, bBase - h, gap * 0.64, h);
+      }
+      ctx.restore();
+
+      // ---- tuning dial ----
+      const dY = H * 0.78;
+      ctx.strokeStyle = isPlaying ? 'rgba(51,255,102,0.7)' : 'rgba(26,122,51,0.7)';
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(x0, dY);
+      ctx.lineTo(x0 + wW, dY);
+      const ticks = 60;
+      for (let i = 0; i <= ticks; i++) {
+        const x = x0 + (wW / ticks) * i;
+        const len = (i % 10 === 0 ? 16 : (i % 5 === 0 ? 11 : 6)) * dpr;
+        ctx.moveTo(x, dY);
+        ctx.lineTo(x, dY - len);
+      }
+      ctx.stroke();
+
+      // needle: sweeps in from the left while locking on, then drifts slightly
+      let needleK = 0.5 + Math.sin(now * 0.0013) * 0.004;
+      if (isPlaying) {
+        const p = Math.min(1, (now - tuneStart) / 1100);
+        const ease = 1 - Math.pow(1 - p, 3);
+        needleK = 0.12 + (0.5 - 0.12) * ease + (1 - p) * Math.sin(now * 0.03) * 0.02;
+      } else {
+        needleK = 0.5 + Math.sin(now * 0.0013) * 0.01;
+      }
+      const nx = x0 + wW * needleK;
+      ctx.save();
+      ctx.strokeStyle = isPlaying ? '#ff3333' : '#ffb833';
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = 10 * dpr;
+      ctx.lineWidth = 2 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(nx, dY - 24 * dpr);
+      ctx.lineTo(nx, dY + 10 * dpr);
+      ctx.stroke();
+      ctx.restore();
+
+      // ---- signal strength (top left) ----
+      if (now - lastSig > 260) {
+        lastSig = now;
+        sigLit = isPlaying
+          ? Math.max(2, Math.min(5, 4 + Math.round((Math.random() - 0.5) * 2)))
+          : (Math.random() < 0.15 ? 2 : 1);
+      }
+      const sbW = 7 * dpr, sbGap = 4 * dpr, sbX = 22 * dpr, sbY = 32 * dpr;
+      for (let i = 0; i < 5; i++) {
+        const h = (6 + i * 5) * dpr;
+        ctx.fillStyle = i < sigLit ? (isPlaying ? '#33ff66' : '#1a7a33') : 'rgba(51,255,102,0.12)';
+        ctx.fillRect(sbX + i * (sbW + sbGap), sbY - h + 12 * dpr, sbW, h);
+      }
+
+      // ---- horizontal sweep band + occasional glitch ----
+      const bandY = ((now * 0.06) % (H + 120 * dpr)) - 60 * dpr;
+      const grad = ctx.createLinearGradient(0, bandY - 40 * dpr, 0, bandY + 40 * dpr);
+      grad.addColorStop(0, 'rgba(51,255,102,0)');
+      grad.addColorStop(0.5, isPlaying ? 'rgba(51,255,102,0.07)' : 'rgba(51,255,102,0.025)');
+      grad.addColorStop(1, 'rgba(51,255,102,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, bandY - 40 * dpr, W, 80 * dpr);
+
+      if (isPlaying && Math.random() < (speaking ? 0.06 : 0.025)) {
+        const gy = Math.random() * H;
+        const gh = (2 + Math.random() * 10) * dpr;
+        ctx.fillStyle = 'rgba(51,255,102,0.16)';
+        ctx.fillRect(0, gy, W, gh);
+      }
+
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
   </script>
 </body>
 </html>
