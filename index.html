@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STATION 3301 - NUMBERS BROADCAST</title>
+  <style>
+    :root {
+      --bg: #090c0a;
+      --term-green: #33ff66;
+      --term-dim: #1a8833;
+      --term-dark: #0f3316;
+      --term-alert: #ff4444;
+      --amber: #ffb833;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--term-green);
+      font-family: 'Courier New', Courier, monospace, monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* CRT scanlines effect */
+    body::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      z-index: 10;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+
+    /* Screen vignette */
+    body::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: radial-gradient(circle, transparent 60%, rgba(0, 0, 0, 0.8) 100%);
+      pointer-events: none;
+      z-index: 11;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(10, 20, 12, 0.85);
+      border: 1px solid var(--term-dim);
+      box-shadow: 0 0 25px var(--term-dark);
+      padding: 24px;
+      border-radius: 4px;
+      position: relative;
+      z-index: 5;
+    }
+
+    header {
+      border-bottom: 1px solid var(--term-dim);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .title {
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      font-weight: bold;
+      text-shadow: 0 0 8px var(--term-green);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--amber);
+      border: 1px solid var(--amber);
+      padding: 2px 8px;
+      border-radius: 2px;
+    }
+
+    .blinker {
+      width: 8px;
+      height: 8px;
+      background-color: var(--amber);
+      border-radius: 50%;
+      animation: blink 1s infinite alternate;
+    }
+
+    @keyframes blink {
+      0% { opacity: 0.2; }
+      100% { opacity: 1; }
+    }
+
+    .freq-box {
+      display: flex;
+      justify-content: space-between;
+      background: #040804;
+      border: 1px solid var(--term-dark);
+      padding: 12px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+
+    .freq-item span {
+      color: #88cc99;
+      margin-left: 6px;
+    }
+
+    /* Oscilloscope canvas */
+    canvas {
+      width: 100%;
+      height: 120px;
+      background: #020603;
+      border: 1px solid var(--term-dim);
+      display: block;
+      margin-bottom: 20px;
+    }
+
+    /* Log / Terminal output */
+    .terminal-window {
+      background: #020503;
+      border: 1px solid var(--term-dark);
+      min-height: 140px;
+      padding: 14px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      font-family: inherit;
+    }
+
+    .log-line {
+      margin-bottom: 4px;
+    }
+
+    .log-line.active {
+      color: #ffffff;
+      font-weight: bold;
+      text-shadow: 0 0 10px var(--term-green);
+    }
+
+    .log-line.word {
+      font-size: 1.15rem;
+      letter-spacing: 3px;
+      color: #aaffbb;
+      padding-left: 14px;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #081a0c;
+      color: var(--term-green);
+      border: 1px solid var(--term-green);
+      padding: 12px 28px;
+      font-family: inherit;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 10px rgba(51, 255, 102, 0.2);
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--term-green);
+      color: var(--bg);
+      box-shadow: 0 0 20px var(--term-green);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: var(--term-dim);
+    }
+
+    footer {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--term-dim);
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="title">CICADA // NUMBERS STATION [3301]</div>
+      <div class="status-badge">
+        <div class="blinker" id="blinker"></div>
+        <span id="status-text">MONITORING</span>
+      </div>
+    </header>
+
+    <div class="freq-box">
+      <div class="freq-item">FREQ:<span>3301.00 kHz (AM)</span></div>
+      <div class="freq-item">SIGNAL:<span>ENCRYPTED V/O</span></div>
+      <div class="freq-item">CODEC:<span>NATO-PHONETIC</span></div>
+    </div>
+
+    <!-- Audio Visualizer Canvas -->
+    <canvas id="scope"></canvas>
+
+    <!-- Transmission Terminal Log -->
+    <div class="terminal-window" id="terminal">
+      <div class="log-line">[SYSTEM] RECEIVER ONLINE. AWAITING SIGNAL...</div>
+      <div class="log-line">[PRESS "RECEIVE TRANSMISSION" TO DECODE AUDIO]</div>
+    </div>
+
+    <div class="controls">
+      <button id="btn-play" onclick="startTransmission()">RECEIVE TRANSMISSION</button>
+      <button id="btn-stop" onclick="stopTransmission()" disabled>ABORT</button>
+    </div>
+
+    <footer>
+      SECURE CARRIER DETECTED &bull; 00-3301-GENESIS &bull; REPEAT CYCLES ENABLED
+    </footer>
+  </div>
+
+  <script>
+    const WORDS = ["GOLF", "ECHO", "NOVEMBER", "ECHO", "SIERRA", "INDIA", "SIERRA"];
+    let audioCtx = null;
+    let isPlaying = false;
+    let abortSignal = false;
+    let noiseNode = null;
+    let animId = null;
+
+    const terminal = document.getElementById('terminal');
+    const statusText = document.getElementById('status-text');
+    const blinker = document.getElementById('blinker');
+    const btnPlay = document.getElementById('btn-play');
+    const btnStop = document.getElementById('btn-stop');
+    const canvas = document.getElementById('scope');
+    const ctx = canvas.getContext('2d');
+
+    // Canvas size
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth * window.devicePixelRatio;
+      canvas.height = canvas.clientHeight * window.devicePixelRatio;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function log(msg, className = '') {
+      const line = document.createElement('div');
+      line.className = 'log-line ' + className;
+      line.textContent = msg;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // Synthesize Radio Static & Tuning Tone with Web Audio API
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playBeep(freq = 800, duration = 0.25) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function startRadioNoise() {
+      if (!audioCtx) return;
+      const bufferSize = audioCtx.sampleRate * 2;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      noiseNode = audioCtx.createBufferSource();
+      noiseNode.buffer = buffer;
+      noiseNode.loop = true;
+
+      // Bandpass filter for authentic shortwave radio hiss
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1400;
+      filter.Q.value = 1.2;
+
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.035;
+
+      noiseNode.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      noiseNode.start();
+    }
+
+    function stopRadioNoise() {
+      if (noiseNode) {
+        try { noiseNode.stop(); } catch(e){}
+        noiseNode = null;
+      }
+    }
+
+    // Oscilloscope Animation
+    function drawScope() {
+      ctx.fillStyle = '#020603';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = isPlaying ? '#33ff66' : '#1a5526';
+      ctx.lineWidth = 2 * window.devicePixelRatio;
+      ctx.beginPath();
+
+      const centerY = canvas.height / 2;
+      const points = 80;
+      for (let i = 0; i <= points; i++) {
+        const x = (canvas.width / points) * i;
+        let y = centerY;
+        if (isPlaying) {
+          const amp = Math.sin(i * 0.4 + Date.now() * 0.015) * 18 * Math.random();
+          y += amp * window.devicePixelRatio;
+        } else {
+          y += (Math.random() - 0.5) * 3;
+        }
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      animId = requestAnimationFrame(drawScope);
+    }
+    drawScope();
+
+    // Voice Readout using Web Speech API
+    function speakWord(word) {
+      return new Promise((resolve) => {
+        if (abortSignal) return resolve();
+        const utter = new SpeechSynthesisUtterance(word);
+        utter.lang = 'en-US';
+        utter.rate = 0.85; // deliberate, calm numbers station cadence
+        utter.pitch = 0.82; // slightly deeper, cold radio operator tone
+        
+        // Pick English voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const engVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex')));
+        if (engVoice) utter.voice = engVoice;
+
+        utter.onend = () => {
+          setTimeout(resolve, 600); // interval between code words
+        };
+        utter.onerror = () => resolve();
+        window.speechSynthesis.speak(utter);
+      });
+    }
+
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    async function startTransmission() {
+      initAudio();
+      isPlaying = true;
+      abortSignal = false;
+      btnPlay.disabled = true;
+      btnStop.disabled = false;
+      statusText.textContent = "INCOMING TRANSMISSION";
+      statusText.style.color = "#ff3333";
+      blinker.style.backgroundColor = "#ff3333";
+
+      terminal.innerHTML = "";
+      log(`[${new Date().toISOString().substring(11, 19)} UTC] CARRIER LOCK: 3301.00 kHz`);
+      startRadioNoise();
+      playBeep(920, 0.3);
+      await sleep(400);
+      playBeep(920, 0.3);
+      await sleep(700);
+
+      log("[SYSTEM] TRANSMISSION COMMENCING:", "active");
+
+      for (let i = 0; i < WORDS.length; i++) {
+        if (abortSignal) break;
+        const w = WORDS[i];
+        log(`> ${w}`, "word active");
+        await speakWord(w);
+      }
+
+      if (!abortSignal) {
+        playBeep(460, 0.6);
+        log(`[${new Date().toISOString().substring(11, 19)} UTC] END OF TRANSMISSION.`);
+        log("[ANALYSIS] RECORDED 7 TOKENS. EXTRACT INITIALS TO RECOVER CIPHERTEXT.");
+      }
+
+      stopRadioNoise();
+      isPlaying = false;
+      btnPlay.disabled = false;
+      btnStop.disabled = true;
+      statusText.textContent = "STANDBY";
+      statusText.style.color = "var(--amber)";
+      blinker.style.backgroundColor = "var(--amber)";
+    }
+
+    function stopTransmission() {
+      abortSignal = true;
+      window.speechSynthesis.cancel();
+      stopRadioNoise();
+      isPlaying = false;
+      btnPlay.disabled = false;
+      btnStop.disabled = true;
+      log("[SYSTEM] TRANSMISSION ABORTED BY OPERATOR.");
+      statusText.textContent = "STANDBY";
+      statusText.style.color = "var(--amber)";
+      blinker.style.backgroundColor = "var(--amber)";
+    }
+
+    // Load voices
+    if (typeof window.speechSynthesis !== 'undefined') {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  </script>
+</body>
+</html>
